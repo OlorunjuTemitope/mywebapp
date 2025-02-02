@@ -1,23 +1,22 @@
-# Use the official .NET SDK image as the base image
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-
-# Set the working directory inside the container
+# Use the official .NET SDK as the build environment
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /app
 
-# Copy the .csproj file and restore dependencies
-COPY "MyWebapp/mywebapi/*.csproj" ./mywebapi/
-WORKDIR /MyWebapp/mywebapi
+# Copy the project file and restore dependencies
+COPY *.csproj ./
 RUN dotnet restore
 
 # Copy the remaining files and build the application
-COPY "MyWebapp/mywebapi/" ./ 
-RUN dotnet build --no-restore -c Release -o /app/build
+COPY . ./
+RUN dotnet publish -c Release -o /out
 
-# Publish the application
-RUN dotnet publish -c Release -o /app/publish
-
-# Use the runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# Use ASP.NET Core runtime as the base image for the final container
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
 WORKDIR /app
-COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "mywebapi.dll"]
+COPY --from=build /out .
+
+# Expose the port the application runs on
+EXPOSE 5000
+
+# Set the entry point for the container
+CMD ["dotnet", "MyWebAPI.dll"]
